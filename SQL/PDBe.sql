@@ -204,3 +204,82 @@ SELECT a.entity_Name FROM map a, map b
 WHERE a.entity_Type = 'building'
   AND b.entity_Name = 'river'
   AND SDO_RELATE(a.geometry, b.geometry, 'mask=ANYINTERACT') = 'TRUE';
+
+
+DROP TABLE MEntities;
+
+CREATE TABLE MEntities (
+    MID        INTEGER PRIMARY KEY,
+    SID_ref  INTEGER REFERENCES SEntities(SID),
+    Title       VARCHAR2(100),
+    Image       ORDSYS.ORDImage,
+    Tokentime       DATE,
+    Image_SI ORDSYS.SI_StillImage,
+    Image_ac ORDSYS.SI_AverageColor,
+    Image_ch ORDSYS.SI_ColorHistogram,
+    Image_pc ORDSYS.SI_PositionalColor,
+    Image_tx ORDSYS.SI_Texture
+);
+
+CREATE OR REPLACE TRIGGER entities_generateFeatures
+  BEFORE INSERT OR UPDATE OF photo ON products
+  FOR EACH ROW
+DECLARE
+  si ORDSYS.SI_StillImage;
+BEGIN
+  -- if there is any photo (it is not an empty image) then generate its features
+  IF :NEW.photo.height IS NOT NULL THEN
+    si := new SI_StillImage(:NEW.photo.getContent());
+    :NEW.photo_si := si;
+    :NEW.photo_ac := SI_AverageColor(si);
+    :NEW.photo_ch := SI_ColorHistogram(si);
+    :NEW.photo_pc := SI_PositionalColor(si);
+    :NEW.photo_tx := SI_Texture(si);
+  END IF;
+END;
+/
+
+INSERT INTO MEntities (MID, SID_ref, Title, Image, Tokentime)
+VALUES (0,1,'with Rose',ORDSYS.ORDImage.init(),TO_DATE('2025-11-02 15:30:00', 'YYYY-MM-DD HH24:MI:SS'));
+
+INSERT INTO MEntities (MID, SID_ref, Title, Image, Tokentime) 
+VALUES (1, 1, 'beautiful', ordsys.ordimage.init(), TO_DATE('2025-11-02 18:00:00', 'YYYY-MM-DD HH24:MI:SS'));
+
+
+INSERT INTO MEntities (MID, SID_ref, Title, Image, Tokentime) 
+VALUES (2, 1, 'beach', ordsys.ordimage.init(), TO_DATE('2025-11-02 21:30:00', 'YYYY-MM-DD HH24:MI:SS'));
+
+
+UPDATE MEntities SET Tokentime = TO_DATE('2025-11-02 18:30:00', 'YYYY-MM-DD HH24:MI:SS') WHERE MID = 1;
+COMMIT;
+
+UPDATE MEntities SET SID_ref  = 0 WHERE MID = 1;
+COMMIT;
+
+UPDATE MEntities SET Title = 'Sunset Scene' WHERE MID = 1;
+COMMIT;
+
+UPDATE MEntities SET Title = 'With my best friend Rose' WHERE MID = 0;
+COMMIT;
+
+DELETE FROM MEntities WHERE MID = 0;
+COMMIT;
+
+SELECT image FROM MEntities WHERE SID_ref = 1;
+
+SELECT Image FROM MEntities WHERE Tokentime BETWEEN TO_DATE('2025-11-02 14:30:00', 'YYYY-MM-DD HH24:MI:SS') AND TO_DATE('2025-11-02 20:30:00', 'YYYY-MM-DD HH24:MI:SS');
+
+SELECT MID, Title, Tokentime, Image FROM MEntities WHERE LOWER(Title) LIKE LOWER('%sunset%');
+
+SELECT 
+    m.entity_id,
+    m.entity_name,
+    m.entity_type,
+    SDO_GEOM.SDO_CENTROID(m.geometry, 0.005).sdo_point.x AS x,
+    SDO_GEOM.SDO_CENTROID(m.geometry, 0.005).sdo_point.y AS y,
+    e.Tokentime,
+    e.Image
+FROM map m
+JOIN MEntities e
+  ON e.SID_ref = m.entity_id 
+WHERE LOWER(m.entity_name) = LOWER(:name);
