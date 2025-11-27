@@ -1,14 +1,31 @@
-DROP TABLE map;
+DROP TABLE MEntities;
+DROP TABLE SEntities;
 
-CREATE TABLE map (
-    entity_Id NUMBER PRIMARY KEY,
-    entity_Name VARCHAR2(32),
-    entity_Type VARCHAR2(32),
-    geometry SDO_GEOMETRY
+CREATE TABLE SEntities (
+    SID NUMBER PRIMARY KEY,
+    SNAME VARCHAR2(32),
+    TYPE VARCHAR2(32),
+    GEOMETRY SDO_GEOMETRY
 );
 
+INSERT INTO SEntities VALUES (
+  0, 'zoo', 'border',
+  SDO_GEOMETRY(
+    2002,
+    NULL,
+    NULL,
+    SDO_ELEM_INFO_ARRAY(1,2,1),
+    SDO_ORDINATE_ARRAY(
+      0,0,
+      500,0,
+      500,500,
+      0,500,
+      0,0
+    )
+  )
+);
 
-INSERT INTO map VALUES(
+INSERT INTO SEntities VALUES(
     1, 'panda_House', 'building',
     SDO_GEOMETRY(
     2003,
@@ -22,7 +39,7 @@ INSERT INTO map VALUES(
     )
 );
 
-INSERT INTO map VALUES (
+INSERT INTO SEntities VALUES (
     2, 'flowerbed_A', 'garden',
     SDO_GEOMETRY(
     2003, 
@@ -35,7 +52,7 @@ INSERT INTO map VALUES (
   )
 );
 
-INSERT INTO map VALUES (
+INSERT INTO SEntities VALUES (
     3, 'flowerbed_B', 'garden',
     SDO_GEOMETRY(
     2003, 
@@ -48,7 +65,7 @@ INSERT INTO map VALUES (
   )
 );
 
-INSERT INTO map VALUES (
+INSERT INTO SEntities VALUES (
     4, 'fountain', 'poi',
     SDO_GEOMETRY(
     2003, 
@@ -62,7 +79,7 @@ INSERT INTO map VALUES (
   )
 );
 
-INSERT INTO map VALUES (
+INSERT INTO SEntities VALUES (
     5, 'central_road', 'road',
     SDO_GEOMETRY(
     2003, 
@@ -74,7 +91,7 @@ INSERT INTO map VALUES (
 );
 
 
-INSERT INTO map VALUES (
+INSERT INTO SEntities VALUES (
     6, 'aquarium', 'building',
     SDO_GEOMETRY(
     2003,
@@ -85,7 +102,7 @@ INSERT INTO map VALUES (
   )
 );
 
-INSERT INTO map VALUES (
+INSERT INTO SEntities VALUES (
     7, 'river', 'water',
     SDO_GEOMETRY(
     2003, 
@@ -106,7 +123,7 @@ INSERT INTO map VALUES (
   )
 );
 
-INSERT INTO map VALUES (
+INSERT INTO SEntities VALUES (
     8, 'bridge_north', 'building',
     SDO_GEOMETRY(
     2003,
@@ -120,7 +137,7 @@ INSERT INTO map VALUES (
 );
 
 
-INSERT INTO map VALUES (
+INSERT INTO SEntities VALUES (
     9, 'bridge_south', 'building',
     SDO_GEOMETRY(
     2003, 
@@ -133,7 +150,7 @@ INSERT INTO map VALUES (
   )
 );
 
-INSERT INTO map VALUES (
+INSERT INTO SEntities VALUES (
     10, 'staff_office', 'building',
     SDO_GEOMETRY(
     2003, NULL, NULL,
@@ -142,7 +159,7 @@ INSERT INTO map VALUES (
   )
 );
 
-INSERT INTO map VALUES (
+INSERT INTO SEntities VALUES (
     11, 'L_building', 'building',
     SDO_GEOMETRY(
     2003, NULL, NULL,
@@ -159,54 +176,39 @@ INSERT INTO map VALUES (
   )
 );
 
-INSERT INTO map VALUES (
-  12, 'zoo', 'border',
-  SDO_GEOMETRY(
-    2002,
-    NULL,
-    NULL,
-    SDO_ELEM_INFO_ARRAY(1,2,1),
-    SDO_ORDINATE_ARRAY(
-      0,0,
-      500,0,
-      500,500,
-      0,500,
-      0,0
-    )
-  )
-);
 
-DELETE FROM map
-WHERE LOWER(entity_Name) = LOWER('bridge_north');
 
-UPDATE map
+DELETE FROM SEntities
+WHERE LOWER(SNAME) = LOWER('bridge_north');
+
+UPDATE SEntities
 SET geometry = SDO_GEOMETRY(
     2003, NULL, NULL,
     SDO_ELEM_INFO_ARRAY(1,1003,3),
     SDO_ORDINATE_ARRAY(30,280, 100,340)
 )
-WHERE entity_Name = 'flowerbed_A';
+WHERE SNAME = 'flowerbed_A';
 
-SELECT entity_Name, entity_Type
-FROM map
-WHERE LOWER(entity_Type) = LOWER('building');
+SELECT SNAME, TYPE
+FROM SEntities
+WHERE LOWER(TYPE) = LOWER('building');
 
-SELECT entity_Id, entity_Name, entity_Type, geometry
-FROM map
-WHERE LOWER(entity_Name) = LOWER('panda_House');
+SELECT SID, SNAME, TYPE, GEOMETRY
+FROM SEntities
+WHERE LOWER(SNAME) = LOWER('panda_House');
 
-SELECT entity_Name,
+SELECT SNAME,
        SDO_GEOM.SDO_AREA(geometry, 0.005) AS area
-FROM map
+FROM SEntities
 WHERE SDO_GEOM.SDO_AREA(geometry, 0.005) > 10000;
 
-SELECT a.entity_Name FROM map a, map b
-WHERE a.entity_Type = 'building'
-  AND b.entity_Name = 'river'
-  AND SDO_RELATE(a.geometry, b.geometry, 'mask=ANYINTERACT') = 'TRUE';
+SELECT a.SNAME FROM SEntities a, SEntities b
+WHERE a.TYPE = 'building'
+  AND b.SNAME = 'river'
+  AND SDO_RELATE(a.GEOMETRY, b.GEOMETRY, 'mask=ANYINTERACT') = 'TRUE';
 
 
-DROP TABLE MEntities;
+
 
 CREATE TABLE MEntities (
     MID        INTEGER PRIMARY KEY,
@@ -221,23 +223,23 @@ CREATE TABLE MEntities (
     Image_tx ORDSYS.SI_Texture
 );
 
-CREATE OR REPLACE TRIGGER entities_generateFeatures
-  BEFORE INSERT OR UPDATE OF photo ON products
-  FOR EACH ROW
-DECLARE
-  si ORDSYS.SI_StillImage;
-BEGIN
-  -- if there is any photo (it is not an empty image) then generate its features
-  IF :NEW.photo.height IS NOT NULL THEN
-    si := new SI_StillImage(:NEW.photo.getContent());
-    :NEW.photo_si := si;
-    :NEW.photo_ac := SI_AverageColor(si);
-    :NEW.photo_ch := SI_ColorHistogram(si);
-    :NEW.photo_pc := SI_PositionalColor(si);
-    :NEW.photo_tx := SI_Texture(si);
-  END IF;
-END;
-/
+-- CREATE OR REPLACE TRIGGER entities_generateFeatures
+--   BEFORE INSERT OR UPDATE OF photo ON products
+--   FOR EACH ROW
+-- DECLARE
+--   si ORDSYS.SI_StillImage;
+-- BEGIN
+--   -- if there is any photo (it is not an empty image) then generate its features
+--   IF :NEW.photo.height IS NOT NULL THEN
+--     si := new SI_StillImage(:NEW.photo.getContent());
+--     :NEW.photo_si := si;
+--     :NEW.photo_ac := SI_AverageColor(si);
+--     :NEW.photo_ch := SI_ColorHistogram(si);
+--     :NEW.photo_pc := SI_PositionalColor(si);
+--     :NEW.photo_tx := SI_Texture(si);
+--   END IF;
+-- END;
+-- /
 
 INSERT INTO MEntities (MID, SID_ref, Title, Image, Tokentime)
 VALUES (0,1,'with Rose',ORDSYS.ORDImage.init(),TO_DATE('2025-11-02 15:30:00', 'YYYY-MM-DD HH24:MI:SS'));
@@ -271,15 +273,5 @@ SELECT Image FROM MEntities WHERE Tokentime BETWEEN TO_DATE('2025-11-02 14:30:00
 
 SELECT MID, Title, Tokentime, Image FROM MEntities WHERE LOWER(Title) LIKE LOWER('%sunset%');
 
-SELECT 
-    m.entity_id,
-    m.entity_name,
-    m.entity_type,
-    SDO_GEOM.SDO_CENTROID(m.geometry, 0.005).sdo_point.x AS x,
-    SDO_GEOM.SDO_CENTROID(m.geometry, 0.005).sdo_point.y AS y,
-    e.Tokentime,
-    e.Image
-FROM map m
-JOIN MEntities e
-  ON e.SID_ref = m.entity_id 
-WHERE LOWER(m.entity_name) = LOWER(:name);
+SELECT * FROM MEntities;
+
