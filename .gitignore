@@ -1,0 +1,11 @@
+# Idea IDE
+/.idea
+
+# Oracle connection passwords
+/oracle-*.pass
+
+# Ignore Gradle project-specific cache directory
+/.gradle
+
+# Ignore Gradle build output directory
+/build
