@@ -7,27 +7,33 @@ plugins {
   // Apply the java plugin to add support for Java
   id("java")
   // Apply the application plugin to add support for building an application
-  id("application")
+  //  id("application")
   // Apply the Maven publish plugin to publish resulting artefacts into a Maven repository
   id("maven-publish")
+
+  id ("war")
+
 }
 
 group = externalGroup
 version = externalVersion
 
-application {
+//application {
   // Define the main class for the application
-  mainClass.set(externalMainClassName)
-}
+//  mainClass.set(externalMainClassName)
+//}
 
 // prevent the use of non reproducible dependencies
-configurations.all {
-  resolutionStrategy {
-    failOnNonReproducibleResolution()
-  }
-}
+// configurations.all {
+//  resolutionStrategy {
+//    failOnNonReproducibleResolution()
+//  }
+// }
+
 
 dependencies {
+  // Servlet API
+  compileOnly("jakarta.servlet:jakarta.servlet-api:5.0.0")
   // Oracle JDBC Driver compatible with JDK11
   implementation("com.oracle.database.jdbc:ojdbc11-production:23.3.0.23.09")
   // Oracle XML Database
@@ -53,6 +59,11 @@ java {
   targetCompatibility = JavaVersion.VERSION_1_8
 }
 
+// WAR configuration
+tasks.withType<War> {
+    archiveFileName.set("oracle-lab-multimedia.war")
+}
+
 publishing {
   publications {
     create<MavenPublication>("mavenJava") {
@@ -71,28 +82,28 @@ tasks.withType<JavaCompile> {
   options.encoding = "UTF-8"
 }
 
-tasks.named<JavaExec>("run") {
-  // Define default system properties applied to the run task and in the generated start scripts of the distribution
-  // systemProperty("login", "mylogin")
-  // systemProperty("password", "mypassword")
-  // Pass all system properties to the application and the start scripts (overwrite previously defined defaults if any)
-  systemProperties(System.getProperties().mapKeys { it.key as String })
-  classpath = sourceSets["main"].runtimeClasspath
-}
+//tasks.named<JavaExec>("run") {
+//  // Define default system properties applied to the run task and in the generated start scripts of the distribution
+//  // systemProperty("login", "mylogin")
+//  // systemProperty("password", "mypassword")
+//  // Pass all system properties to the application and the start scripts (overwrite previously defined defaults if any)
+//  systemProperties(System.getProperties().mapKeys { it.key as String })
+//  classpath = sourceSets["main"].runtimeClasspath
+//}
 
 tasks.withType<Test> {
   useJUnitPlatform()
 }
 
-tasks.withType<Jar> {
-  manifest {
-    attributes(
-      "Built-By" to System.getProperty("user.name"),
-      "Build-Jdk" to System.getProperty("java.version"),
-      "Main-Class" to externalMainClassName,
-    )
-  }
-}
+//tasks.withType<Jar> {
+//  manifest {
+//    attributes(
+//      "Built-By" to System.getProperty("user.name"),
+//      "Build-Jdk" to System.getProperty("java.version"),
+//      "Main-Class" to externalMainClassName,
+//    )
+//  }
+//}
 
 // ensure proper reproducibility of the genereated .jar files
 tasks.withType<AbstractArchiveTask>().configureEach {
@@ -100,7 +111,7 @@ tasks.withType<AbstractArchiveTask>().configureEach {
   isReproducibleFileOrder = true
 }
 
-// use dynamic classpath instead of a list of JARs; prevents "The input line is too long" on Windows
-tasks.withType<CreateStartScripts> {
-  classpath = files("lib/*")
-}
+//// use dynamic classpath instead of a list of JARs; prevents "The input line is too long" on Windows
+//tasks.withType<CreateStartScripts> {
+//  classpath = files("lib/*")
+//}
