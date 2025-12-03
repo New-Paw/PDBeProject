@@ -1,5 +1,3 @@
-package ui;
-
 public class MapMedia {
     private int id;
     private String name;
