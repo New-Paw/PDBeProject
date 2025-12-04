@@ -10,14 +10,15 @@
 <head><title>View Product Image</title></head>
 <body>
 <%
-  String code = request.getParameter("code");
-  if (code == null) {
-    code = "1"; // 默认看看 1 号
+  String MID = request.getParameter("MID");
+  if (MID == null) {
+    MID = "50"; // 默认看看 1 号
   }
 %>
-<h1>Product <%= code %> Image</h1>
+<h1>Product <%= MID %> Image</h1>
 
-<img src="<%= request.getContextPath() %>/image?code=<%= code %>" alt="Product image"/>
+
+<img src="<%= request.getContextPath() %>/image?MID=<%= MID %>" alt="Product image"/>
 
 <br/><br/>
 <a href="<%= request.getContextPath() %>/upload">Upload another image</a>

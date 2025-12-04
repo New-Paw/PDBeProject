@@ -1,4 +1,4 @@
-package dbs.oracle_lab_multimedia;
+package dbs.multimedia;
 
 import java.sql.Connection;
 import java.util.ArrayList;

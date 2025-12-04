@@ -1,4 +1,4 @@
-package dbs.oracle_lab_multimedia;
+package dbs.multimedia;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.MultipartConfig;
@@ -8,8 +8,9 @@ import jakarta.servlet.http.*;
         import java.io.*;
 
         import java.sql.Connection;
+import java.sql.Date;
 
-@WebServlet("/upload_image")
+@WebServlet("/api/Mentities")
 @MultipartConfig
 public class UploadServlet extends HttpServlet {
 
@@ -24,8 +25,16 @@ public class UploadServlet extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
-        int code = Integer.parseInt(req.getParameter("code"));
-        String title = req.getParameter("title");
+        int MID = Integer.parseInt(req.getParameter("MID"));
+
+        int SID_ref = Integer.parseInt(req.getParameter("SID_ref"));
+
+        String Title = req.getParameter("title");
+
+        String tokStr = req.getParameter("Tokentime");
+
+        Date Tokentime = Date.valueOf(tokStr);  // 格式必须是 yyyy-MM-dd
+
         Part filePart = req.getPart("image"); // 表单里的 name="image"
 
         // 把上传的文件写到一个临时文件（复用你现有的 saveImageToDbFromFile）
@@ -36,7 +45,7 @@ public class UploadServlet extends HttpServlet {
         }
 
         try (Connection conn = DbUtil.getConnection()) {
-            Product product = new Product(code, title);
+            Mentities product = new Mentities(MID, SID_ref,Title, Tokentime);
             product.saveToDb(conn); // 确保基本记录存在
             product.saveImageToDbFromFile(conn, tmp.getAbsolutePath());
         } catch (Exception e) {
@@ -45,7 +54,8 @@ public class UploadServlet extends HttpServlet {
             tmp.delete();
         }
 
-        // 跳转到预览页面
-        resp.sendRedirect(req.getContextPath() + "/view?code=" + code);
+        resp.sendRedirect(req.getContextPath() + "/view?code=" + MID);
     }
 }
+
+

@@ -1,4 +1,4 @@
-package dbs.oracle_lab_multimedia;
+package dbs.multimedia;
 
 import java.io.IOException;
 import java.sql.Connection;

@@ -1,4 +1,4 @@
-package dbs.oracle_lab_multimedia;
+package dbs.multimedia;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -7,29 +7,30 @@ import jakarta.servlet.http.*;
 import java.io.IOException;
 import java.sql.Connection;
 
-@WebServlet("/image")
+@WebServlet("/api/Image")
 public class ImageServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
-        String codeParam = req.getParameter("code");
-        if (codeParam == null) {
-            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Missing code");
+        String MIDParam = req.getParameter("MID");
+        if (MIDParam == null) {
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Missing MID");
             return;
         }
 
-        int code = Integer.parseInt(codeParam);
+        int MID = Integer.parseInt(MIDParam);
 
         try (Connection conn = DbUtil.getConnection()) {
-            Product product = new Product(conn, code); // 先确认存在
-            resp.setContentType("image/gif"); // 你存的是 GIF，如有需要可以改
-            product.writeImageToStream(conn, resp.getOutputStream());
-        } catch (Product.NotFoundException e) {
+            Mentities mentities = new Mentities(conn, MID);
+            resp.setContentType("image/*");
+            mentities.writeImageToStream(conn, resp.getOutputStream());
+        } catch (Mentities.NotFoundException e) {
             resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Product not found");
         } catch (Exception e) {
             throw new ServletException(e);
         }
+
     }
 }
