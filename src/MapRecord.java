@@ -20,7 +20,6 @@ public class MapRecord {
         this.visitTime = visitTime;
     }
 
-    // 无参构造（有时候需要）
     public MapRecord() {}
 
     public int getId() { return id; }

@@ -19,14 +19,14 @@ public class MainFrame extends JFrame {
         initUI();
     }
 
-    /** 使用 Nimbus 外观，让整体更现代一点 */
+    // Set the appearance.
     private void setLookAndFeel() {
         try {
             UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
         } catch (Exception ignored) {}
     }
 
-    /** 假数据 */
+    // Initialize the local data.(Just used to test)
     private void initData() {
         allRecords = new ArrayList<>();
         allRecords.add(new MapRecord(1, "Panda House", "building", 100, 400, "panda.jpg", new Date()));
@@ -39,6 +39,7 @@ public class MainFrame extends JFrame {
         filtered = new ArrayList<>(allRecords);
     }
 
+    // Build the main window interface.
     private void initUI() {
         setTitle("Zoo Map");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -47,7 +48,7 @@ public class MainFrame extends JFrame {
         setLayout(new BorderLayout());
         getContentPane().setBackground(new Color(248, 247, 255));
 
-        // ===== 顶部标题区 =====
+        // Top title.
         JPanel header = new JPanel(new BorderLayout());
         header.setBorder(BorderFactory.createEmptyBorder(12, 16, 8, 16));
         header.setOpaque(false);
@@ -59,11 +60,12 @@ public class MainFrame extends JFrame {
 
         add(header, BorderLayout.NORTH);
 
-        // ===== 搜索栏（圆角） =====
+        // Search bar.
         JPanel searchWrapper = new JPanel(new BorderLayout());
         searchWrapper.setOpaque(false);
         searchWrapper.setBorder(BorderFactory.createEmptyBorder(0, 16, 12, 16));
 
+        // Wrap the container of the search bar, leaving left and right space.
         JPanel searchPanel = new JPanel(new BorderLayout(8, 0)) {
             @Override
             protected void paintComponent(Graphics g) {
@@ -82,13 +84,15 @@ public class MainFrame extends JFrame {
         JLabel icon = new JLabel("🔍");
         searchPanel.add(icon, BorderLayout.WEST);
 
+        // The setting of the searchBar.
         searchField = new JTextField();
         searchField.setBorder(BorderFactory.createEmptyBorder(2, 4, 2, 4));
         searchField.setOpaque(false);
         searchField.setFont(searchField.getFont().deriveFont(13f));
-        searchField.setToolTipText("输入名称进行筛选");
+        searchField.setToolTipText("Please enter text to filter.");
         searchPanel.add(searchField, BorderLayout.CENTER);
 
+        // Clear button.
         JButton clearBtn = new JButton("×");
         clearBtn.setMargin(new Insets(1, 6, 1, 6));
         clearBtn.setFocusable(false);
@@ -103,7 +107,7 @@ public class MainFrame extends JFrame {
 
         searchField.addActionListener(this::onSearch);
 
-        // ===== 中部地图 =====
+        // Map panel.
         mapPanel = new MapPanel(filtered);
         mapPanel.setPreferredSize(new Dimension(400, 600));
         mapPanel.setMarkerClickListener(rec -> {
@@ -111,6 +115,7 @@ public class MainFrame extends JFrame {
             dialog.setVisible(true);
         });
 
+        // Edge wrapping.
         JPanel centerWrapper = new JPanel(new BorderLayout());
         centerWrapper.setOpaque(false);
         centerWrapper.setBorder(BorderFactory.createEmptyBorder(4, 10, 16, 10));
@@ -119,6 +124,7 @@ public class MainFrame extends JFrame {
         add(centerWrapper, BorderLayout.CENTER);
     }
 
+    // Search filtering logic.
     private void onSearch(ActionEvent e) {
         String keyword = searchField.getText().trim().toLowerCase();
         if (keyword.isEmpty()) {

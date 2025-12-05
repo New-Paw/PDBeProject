@@ -7,6 +7,7 @@ import java.util.List;
 
 public class MapPanel extends JPanel {
 
+    // The listener to call the InforDialog.
     public interface MarkerClickListener {
         void onMarkerClicked(MapRecord rec);
     }
@@ -14,16 +15,15 @@ public class MapPanel extends JPanel {
     private List<MapRecord> records;
     private MarkerClickListener listener;
 
-    // 数据坐标范围 0~500
+    // The map range
     private static final double DATA_MIN = 0.0;
     private static final double DATA_MAX = 500.0;
-
-    // 点击选中高亮
     private MapRecord selected;
 
+    // Constructor
     public MapPanel(List<MapRecord> records) {
         this.records = records;
-        setOpaque(false); // 让我们自己画背景
+        setOpaque(false);
 
         addMouseListener(new MouseAdapter() {
             @Override
@@ -33,10 +33,12 @@ public class MapPanel extends JPanel {
         });
     }
 
+    // Connect to the MainFrame.
     public void setMarkerClickListener(MarkerClickListener listener) {
         this.listener = listener;
     }
 
+    // Refresh the map.
     public void setRecords(List<MapRecord> records) {
         this.records = records;
         selected = null;
@@ -55,7 +57,7 @@ public class MapPanel extends JPanel {
         int w = getWidth();
         int h = getHeight();
 
-        // ===== 1. 背景：淡紫渐变 + 圆角卡片效果 =====
+        // Background
         GradientPaint bg = new GradientPaint(0, 0,
                 new Color(245, 242, 255),
                 0, h,
@@ -63,20 +65,20 @@ public class MapPanel extends JPanel {
         g2.setPaint(bg);
         g2.fillRoundRect(10, 10, w - 20, h - 20, 30, 30);
 
-        // 内部地图区域
+        // The map.
         Shape inner = new Rectangle(30, 30, w - 60, h - 80);
         g2.setColor(new Color(255, 255, 255, 210));
         g2.fill(inner);
 
-        // ===== 2. 简单画几条“道路”/“边界”，让画面更像地图 =====
+        // Just used to local show, not usefull to the database.
         g2.setStroke(new BasicStroke(3f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
         g2.setColor(new Color(220, 220, 235));
         g2.drawLine(60, h - 150, w - 100, 80);
         g2.drawLine(80, 80, 80, h - 140);
         g2.drawLine(w - 120, 120, w - 120, h - 120);
 
-        // ===== 3. 画每个点位：彩色图钉 + 文本标签 =====
-        int r = 9; // 图钉大小
+        // The position with some colorful attributes.
+        int r = 9; 
 
         for (MapRecord rec : records) {
             Point p = dataToScreen(rec.getX(), rec.getY(), w, h);
@@ -85,7 +87,7 @@ public class MapPanel extends JPanel {
             boolean isSelected = (selected != null && selected.getId() == rec.getId());
             drawPin(g2, p.x, p.y, color, isSelected);
 
-            // 名称标签
+            // The lable of name.
             String name = rec.getName();
             if (name != null && !name.isEmpty()) {
                 g2.setFont(g2.getFont().deriveFont(Font.PLAIN, 11f));
@@ -105,6 +107,7 @@ public class MapPanel extends JPanel {
         g2.dispose();
     }
 
+    // Determine which pin the user has clicked.
     private void handleClick(int mx, int my) {
         if (records == null) return;
 
@@ -125,7 +128,7 @@ public class MapPanel extends JPanel {
         }
     }
 
-    /** 坐标映射（带内边距） */
+    // Display the data on the screen.
     private Point dataToScreen(double x, double y, int width, int height) {
         int left = 40, right = 40, top = 50, bottom = 80;
         double usableW = width - left - right;
@@ -141,33 +144,33 @@ public class MapPanel extends JPanel {
         return new Point(sx, sy);
     }
 
-    /** 根据类型给不同颜色（可按需扩展） */
+    // Give each pin a different color to distinguish the locations.
     private Color getColorByType(String type) {
         if (type == null) return new Color(118, 99, 255);
         String t = type.toLowerCase();
         if (t.contains("building") || t.contains("house")) {
-            return new Color(118, 99, 255); // 紫色
+            return new Color(118, 99, 255); // Purple
         } else if (t.contains("fountain") || t.contains("water")) {
-            return new Color(76, 178, 255); // 蓝色
+            return new Color(76, 178, 255); // Blue
         } else if (t.contains("garden") || t.contains("flower")) {
-            return new Color(122, 201, 67); // 绿色
+            return new Color(122, 201, 67); // Green
         } else if (t.contains("bridge")) {
-            return new Color(255, 171, 64); // 橙色
+            return new Color(255, 171, 64); // Orange
         } else {
-            return new Color(140, 158, 255); // 默认
+            return new Color(140, 158, 255); // Default
         }
     }
 
-    /** 画一个“地图图钉” */
+    // The method to draw the pin.
     private void drawPin(Graphics2D g2, int x, int y, Color base, boolean selected) {
         int size = selected ? 14 : 11;
         int r = size / 2;
 
-        // 阴影
+        // Create shadow.
         g2.setColor(new Color(0, 0, 0, 40));
         g2.fillOval(x - r, y - r + 6, size, size / 2);
 
-        // 水滴形（图钉）
+        // Pin
         GeneralPath path = new GeneralPath();
         path.moveTo(x, y - r);
         path.curveTo(x + r, y - r, x + r, y, x, y + r + 2);
@@ -175,7 +178,7 @@ public class MapPanel extends JPanel {
         g2.setColor(base);
         g2.fill(path);
 
-        // 白色圆点
+        // The white point in the pin.
         g2.setColor(Color.WHITE);
         g2.fillOval(x - r / 2, y - r / 2, r, r);
     }

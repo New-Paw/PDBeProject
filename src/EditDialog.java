@@ -4,15 +4,15 @@ import java.util.Date;
 
 public class EditDialog extends JDialog {
 
-    private final MapRecord rec;
+    private final MapRecord rec;    // Get data from local file.
     private final Runnable onSaved;
-
     private JTextField nameField;
     private JTextField imageField;
     private JSpinner dateSpinner;
 
+    // Constructor
     public EditDialog(Frame owner, MapRecord rec, Runnable onSaved) {
-        super(owner, "编辑地点信息", true);
+        super(owner, "Edit location information", true);
         this.rec = rec;
         this.onSaved = onSaved;
         initUI();
@@ -31,13 +31,13 @@ public class EditDialog extends JDialog {
         card.setBorder(BorderFactory.createEmptyBorder(12, 16, 16, 16));
         root.add(card, BorderLayout.CENTER);
 
-        // 顶部标题
-        JLabel title = new JLabel("编辑地点信息");
+        // Top title.
+        JLabel title = new JLabel("Edit location information");
         title.setFont(title.getFont().deriveFont(Font.BOLD, 16f));
         title.setForeground(new Color(111, 61, 188));
         card.add(title, BorderLayout.NORTH);
 
-        // 中部表单
+        // The middle part.
         JPanel form = new JPanel();
         form.setOpaque(false);
         form.setLayout(new GridBagLayout());
@@ -48,17 +48,17 @@ public class EditDialog extends JDialog {
         gc.gridx = 0;
         gc.weightx = 1.0;
 
-        // 地点名称
+        // The name of the location.
         nameField = new JTextField(rec.getName(), 20);
-        addFormRow(form, gc, "地点名称", nameField);
+        addFormRow(form, gc, "Location Name", nameField);
 
-        // 图片信息
+        // Information of the image.
         imageField = new JTextField(
                 rec.getImagePath() == null ? "" : rec.getImagePath(), 20);
-        imageField.setToolTipText("可填写图片说明或文件名");
-        addFormRow(form, gc, "图片信息", imageField);
+        imageField.setToolTipText("You can fill in the picture description or file name");
+        addFormRow(form, gc, "Picture Information", imageField);
 
-        // 时间
+        // Data of time.
         Date initial = rec.getVisitTime() != null ? rec.getVisitTime() : new Date();
         SpinnerDateModel model = new SpinnerDateModel(initial, null, null,
                 java.util.Calendar.MINUTE);
@@ -66,14 +66,14 @@ public class EditDialog extends JDialog {
         JSpinner.DateEditor editor = new JSpinner.DateEditor(dateSpinner,
                 "yyyy-MM-dd HH:mm");
         dateSpinner.setEditor(editor);
-        addFormRow(form, gc, "时间戳", dateSpinner);
+        addFormRow(form, gc, "Datastamp", dateSpinner);
 
         card.add(form, BorderLayout.CENTER);
 
-        // 底部按钮
+        // The button.
         JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         bottom.setOpaque(false);
-        JButton cancelBtn = createGhostButton("取消");
+        JButton cancelBtn = createPrimaryButton("Cancel");
         JButton confirmBtn = createPrimaryButton("Confirm");
         bottom.add(cancelBtn);
         bottom.add(confirmBtn);
@@ -83,6 +83,7 @@ public class EditDialog extends JDialog {
         confirmBtn.addActionListener(e -> onConfirm());
     }
 
+    // Control boundary range.
     private void addFormRow(JPanel panel, GridBagConstraints gc,
                             String labelText, JComponent field) {
         JLabel label = new JLabel(labelText);
@@ -101,6 +102,7 @@ public class EditDialog extends JDialog {
         gc.insets = new Insets(6, 0, 6, 0);
     }
 
+    // The method to update the data.
     private void onConfirm() {
         rec.setName(nameField.getText().trim());
         String img = imageField.getText().trim();
@@ -113,8 +115,7 @@ public class EditDialog extends JDialog {
         dispose();
     }
 
-    // ===== 与 InfoDialog 一致的样式辅助 =====
-
+    // Same method like in InforDialog.
     private JButton createPrimaryButton(String text) {
         JButton btn = new JButton(text);
         btn.setFocusPainted(false);
@@ -124,17 +125,7 @@ public class EditDialog extends JDialog {
         return btn;
     }
 
-    private JButton createGhostButton(String text) {
-        JButton btn = new JButton(text);
-        btn.setFocusPainted(false);
-        btn.setContentAreaFilled(false);
-        btn.setForeground(new Color(118, 99, 255));
-        btn.setBorder(BorderFactory.createCompoundBorder(
-                new RoundedBorder(new Color(210, 205, 255)),
-                BorderFactory.createEmptyBorder(5, 16, 5, 16)));
-        return btn;
-    }
-
+    // Same like in InforDialog to define a class to make the panel softer.
     private static class RoundedPanel extends JPanel {
         private final int radius;
         private final Color bg;
@@ -154,33 +145,6 @@ public class EditDialog extends JDialog {
             g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
             g2.dispose();
             super.paintComponent(g);
-        }
-    }
-
-    private static class RoundedBorder implements javax.swing.border.Border {
-        private final Color color;
-
-        public RoundedBorder(Color color) {
-            this.color = color;
-        }
-
-        @Override
-        public Insets getBorderInsets(Component c) {
-            return new Insets(4, 10, 4, 10);
-        }
-
-        @Override
-        public boolean isBorderOpaque() { return false; }
-
-        @Override
-        public void paintBorder(Component c, Graphics g,
-                                int x, int y, int w, int h) {
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                    RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setColor(color);
-            g2.drawRoundRect(x, y, w - 1, h - 1, 14, 14);
-            g2.dispose();
         }
     }
 }
