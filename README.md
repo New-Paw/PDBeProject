@@ -1,9 +1,13 @@
 Technology stack:
+
 Backend: Java Servlet（Jakarta Servlet）, Oracle DB (Spatial + interMedia/ORDImage)
+
 Frontend: JSP + Leaflet.js
 
 Main tables:
+
 SEntities:( SID NUMBER PRIMARY KEY, entity_Name VARCHAR2(32), entity_Type VARCHAR2(32), geometry SDO_GEOMETRY )
+
 MEntities:( MID INTEGER PRIMARY KEY, SID_ref INTEGER REFERENCES SEntities(SID), Title VARCHAR2(100), Image ORDSYS.ORDImage, Tokentime DATE, Image_SI ORDSYS.SI_StillImage, Image_ac ORDSYS.SI_AverageColor, Image_ch ORDSYS.SI_ColorHistogram, Image_pc ORDSYS.SI_PositionalColor, Image_tx ORDSYS.SI_Texture)
 
 Servlet mapping:
