@@ -57,7 +57,8 @@
 
     #upload-panel,
     #edit-panel,
-    #filter-panel {
+    #filter-panel,
+    #spatial-panel {
       margin-bottom: 10px;
       padding: 8px;
       border: 1px solid #ddd;
@@ -114,6 +115,71 @@
       color: #333;
       word-break: break-all;
     }
+
+    /* Modal styles for spatial entity create/edit/delete */
+    .modal {
+      position: fixed;
+      z-index: 999;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.35);
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-content {
+      background-color: #fdfcff;
+      padding: 16px 20px 20px 20px;
+      border-radius: 10px;
+      width: 360px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+      font-size: 14px;
+    }
+
+    .modal-content h3 {
+      margin-top: 0;
+      color: #333;
+    }
+
+    .modal-content label {
+      display: inline-block;
+      width: 90px;
+      font-size: 13px;
+      color: #555;
+    }
+
+    .modal-content input,
+    .modal-content select {
+      width: calc(100% - 100px);
+      box-sizing: border-box;
+      padding: 4px 6px;
+      margin-top: 2px;
+      margin-bottom: 4px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      font-size: 13px;
+    }
+
+    .modal-content .button-row {
+      margin-top: 8px;
+    }
+
+    .modal-content button {
+      padding: 6px 12px;
+      border-radius: 16px;
+      border: 1px solid #d1cdfa;
+      background: #f4f0ff;
+      color: #6f3dba;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .modal-content button + button {
+      margin-left: 6px;
+    }
   </style>
 </head>
 <body>
@@ -125,6 +191,19 @@
 
   <div id="right-pane">
     <div id="right-title">click a marker</div>
+
+    <!-- The button of the create/edit/delete */ -->
+    <div id="spatial-panel">
+      <div class="upload-row">
+        <button type="button" onclick="openCreateSpatialModal()">Add entity</button>
+        <button type="button" onclick="openEditSpatialModal()">Edit selected</button>
+        <button type="button" onclick="openDeleteSpatialModal()">Delete selected</button>
+      </div>
+      <div style="font-size:12px;color:#666;">
+        Coordinates are in local map space (0–500).
+        Please click a marker before editing or deleting.
+      </div>
+    </div>
 
     <!-- Upload panel -->
     <div id="upload-panel">
@@ -200,6 +279,153 @@
   </div>
 </div>
 
+<!-- Create spatial entity modal -->
+<div id="spatial-create-modal" class="modal">
+  <div class="modal-content">
+    <h3>Create spatial entity</h3>
+    <form method="post" action="<%= request.getContextPath() %>/createSpatial">
+      <div class="upload-row">
+        <label for="spatial-create-sid">SID</label>
+        <input type="number" id="spatial-create-sid" name="sid" required/>
+      </div>
+      <div class="upload-row">
+        <label for="spatial-create-name">Name</label>
+        <input type="text" id="spatial-create-name" name="entityName" required/>
+      </div>
+      <div class="upload-row">
+        <label for="spatial-create-type">Type</label>
+        <input type="text" id="spatial-create-type" name="entityType" required/>
+      </div>
+      <div class="upload-row">
+        <label for="spatial-create-shape">Shape</label>
+        <select id="spatial-create-shape" name="shape"
+                onchange="onSpatialShapeChange('create')">
+          <option value="point">Point</option>
+          <option value="rectangle">Rectangle</option>
+        </select>
+      </div>
+      <!-- Point coordinates -->
+      <div id="spatial-create-point-fields">
+        <div class="upload-row">
+          <label for="spatial-create-x">X</label>
+          <input type="number" step="0.1" id="spatial-create-x" name="x"/>
+        </div>
+        <div class="upload-row">
+          <label for="spatial-create-y">Y</label>
+          <input type="number" step="0.1" id="spatial-create-y" name="y"/>
+        </div>
+      </div>
+      <!-- Rectangle coordinates -->
+      <div id="spatial-create-rect-fields" style="display:none;">
+        <div class="upload-row">
+          <label for="spatial-create-x1">X1</label>
+          <input type="number" step="0.1" id="spatial-create-x1" name="x1"/>
+        </div>
+        <div class="upload-row">
+          <label for="spatial-create-y1">Y1</label>
+          <input type="number" step="0.1" id="spatial-create-y1" name="y1"/>
+        </div>
+        <div class="upload-row">
+          <label for="spatial-create-x2">X2</label>
+          <input type="number" step="0.1" id="spatial-create-x2" name="x2"/>
+        </div>
+        <div class="upload-row">
+          <label for="spatial-create-y2">Y2</label>
+          <input type="number" step="0.1" id="spatial-create-y2" name="y2"/>
+        </div>
+      </div>
+      <div class="button-row">
+        <button type="submit">Save</button>
+        <button type="button" onclick="closeCreateSpatialModal()">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Edit spatial entity modal -->
+<div id="spatial-edit-modal" class="modal">
+  <div class="modal-content">
+    <h3>Edit spatial entity</h3>
+    <form method="post" action="<%= request.getContextPath() %>/updateSpatial">
+      <div class="upload-row">
+        <label for="spatial-edit-sid">SID</label>
+        <input type="number" id="spatial-edit-sid" name="sid" required/>
+      </div>
+      <div class="upload-row">
+        <label for="spatial-edit-name">Name</label>
+        <input type="text" id="spatial-edit-name" name="entityName" required/>
+      </div>
+      <div class="upload-row">
+        <label for="spatial-edit-type">Type</label>
+        <input type="text" id="spatial-edit-type" name="entityType" required/>
+      </div>
+      <div class="upload-row">
+        <label for="spatial-edit-shape">Shape</label>
+        <select id="spatial-edit-shape" name="shape"
+                onchange="onSpatialShapeChange('edit')">
+          <option value="">Do not change geometry</option>
+          <option value="point">Point</option>
+          <option value="rectangle">Rectangle</option>
+        </select>
+      </div>
+      <!-- Point coords for edit -->
+      <div id="spatial-edit-point-fields" style="display:none;">
+        <div class="upload-row">
+          <label for="spatial-edit-x">X</label>
+          <input type="number" step="0.1" id="spatial-edit-x" name="x"/>
+        </div>
+        <div class="upload-row">
+          <label for="spatial-edit-y">Y</label>
+          <input type="number" step="0.1" id="spatial-edit-y" name="y"/>
+        </div>
+      </div>
+      <!-- Rectangle coords for edit -->
+      <div id="spatial-edit-rect-fields" style="display:none;">
+        <div class="upload-row">
+          <label for="spatial-edit-x1">X1</label>
+          <input type="number" step="0.1" id="spatial-edit-x1" name="x1"/>
+        </div>
+        <div class="upload-row">
+          <label for="spatial-edit-y1">Y1</label>
+          <input type="number" step="0.1" id="spatial-edit-y1" name="y1"/>
+        </div>
+        <div class="upload-row">
+          <label for="spatial-edit-x2">X2</label>
+          <input type="number" step="0.1" id="spatial-edit-x2" name="x2"/>
+        </div>
+        <div class="upload-row">
+          <label for="spatial-edit-y2">Y2</label>
+          <input type="number" step="0.1" id="spatial-edit-y2" name="y2"/>
+        </div>
+      </div>
+      <div class="button-row">
+        <button type="submit">Save</button>
+        <button type="button" onclick="closeEditSpatialModal()">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Delete spatial entity modal -->
+<div id="spatial-delete-modal" class="modal">
+  <div class="modal-content">
+    <h3>Delete spatial entity</h3>
+    <form method="post" action="<%= request.getContextPath() %>/deleteSpatial">
+      <div class="upload-row">
+        <label for="spatial-delete-sid">SID</label>
+        <input type="number" id="spatial-delete-sid" name="sid" required/>
+      </div>
+      <p style="color:red;font-size:13px;">
+        This operation cannot be undone. Are you sure?
+      </p>
+      <div class="button-row">
+        <button type="submit">Delete</button>
+        <button type="button" onclick="closeDeleteSpatialModal()">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 <script>
@@ -216,6 +442,9 @@
   let currentSid = null;
   let currentEntityName = '';
   let selectedImageMid = null;
+
+  // hold currently selected spatial entity (from SEntities)
+  let selectedEntity = null;
 
   // Initial load (map + all images)
   loadEntities();
@@ -276,6 +505,7 @@
 
     currentSid = sid;
     currentEntityName = name;
+    selectedEntity = entity;  // remember selected spatial entity
 
     selectedImageMid = null;
     document.getElementById('edit-panel').style.display = 'none';
@@ -548,6 +778,79 @@
 
   function doSearch() {
     alert("Search not implemented");
+  }
+
+  // ===== Spatial entity modal helpers =====
+
+  function openCreateSpatialModal() {
+    // Reset fields
+    document.getElementById('spatial-create-sid').value = '';
+    document.getElementById('spatial-create-name').value = '';
+    document.getElementById('spatial-create-type').value = '';
+    document.getElementById('spatial-create-shape').value = 'point';
+    onSpatialShapeChange('create');
+    document.getElementById('spatial-create-modal').style.display = 'flex';
+  }
+
+  function closeCreateSpatialModal() {
+    document.getElementById('spatial-create-modal').style.display = 'none';
+  }
+
+  function openEditSpatialModal() {
+    if (!selectedEntity) {
+      alert("Please click a spatial marker first.");
+      return;
+    }
+    // Prefill SID, name, type from selectedEntity
+    document.getElementById('spatial-edit-sid').value = selectedEntity.sid;
+    document.getElementById('spatial-edit-name').value = selectedEntity.name || '';
+    document.getElementById('spatial-edit-type').value = selectedEntity.type || '';
+
+    // By default do not change geometry
+    document.getElementById('spatial-edit-shape').value = '';
+    onSpatialShapeChange('edit');
+
+    document.getElementById('spatial-edit-modal').style.display = 'flex';
+  }
+
+  function closeEditSpatialModal() {
+    document.getElementById('spatial-edit-modal').style.display = 'none';
+  }
+
+  function openDeleteSpatialModal() {
+    if (!selectedEntity) {
+      alert("Please click a spatial marker first.");
+      return;
+    }
+    // Prefill SID for delete
+    document.getElementById('spatial-delete-sid').value = selectedEntity.sid;
+    document.getElementById('spatial-delete-modal').style.display = 'flex';
+  }
+
+  function closeDeleteSpatialModal() {
+    document.getElementById('spatial-delete-modal').style.display = 'none';
+  }
+
+  // Switch shape between point and rectangle (for create/edit modals)
+  function onSpatialShapeChange(prefix) {
+    var shapeSelect = document.getElementById('spatial-' + prefix + '-shape');
+    if (!shapeSelect) return;
+    var shape = shapeSelect.value;
+
+    var pointFields = document.getElementById('spatial-' + prefix + '-point-fields');
+    var rectFields  = document.getElementById('spatial-' + prefix + '-rect-fields');
+    if (!pointFields || !rectFields) return;
+
+    if (shape === 'point') {
+      pointFields.style.display = 'block';
+      rectFields.style.display = 'none';
+    } else if (shape === 'rectangle') {
+      pointFields.style.display = 'none';
+      rectFields.style.display = 'block';
+    } else {
+      pointFields.style.display = 'none';
+      rectFields.style.display = 'none';
+    }
   }
 </script>
 

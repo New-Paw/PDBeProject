@@ -12,6 +12,8 @@ public class DbUtil {
             dataSource.setURL("jdbc:oracle:thin:@//gort.fit.vutbr.cz:1521/orclpdb");
             dataSource.setUser("xzhaome00");
             dataSource.setPassword("828PB9GH");
+//            dataSource.setUser("xjiangp00");
+//            dataSource.setPassword("usIXPHCk");
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
