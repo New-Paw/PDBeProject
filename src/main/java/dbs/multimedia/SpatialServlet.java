@@ -73,7 +73,7 @@ public class SpatialServlet extends HttpServlet {
 
     private String escape(String s) {
         if (s == null) return "";
-        return s.replace("\\", "\\\\")   // 先转义反斜杠
-                .replace("\"", "\\\""); // 再转义双引号
+        return s.replace("\\", "\\\\")   // \
+                .replace("\"", "\\\""); // "
     }
 }

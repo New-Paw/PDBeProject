@@ -3,17 +3,21 @@ package dbs.multimedia;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
-import java.io.*;
+
+import java.io.IOException;
+import java.io.OutputStream;
 import java.sql.*;
+
+import oracle.ord.im.OrdImage;
+import oracle.sql.STRUCT;
+import oracle.jdbc.OracleTypes;
 
 @WebServlet("/image")
 public class ImageServlet extends HttpServlet {
 
-    // 从 ORDImage 中取出本地 BLOB 数据
+    // Retrieve ORDImage object by MID
     private static final String SQL =
-            "SELECT m.Image.localdata " +
-                    "FROM MEntities m " +
-                    "WHERE m.MID = ?";
+            "SELECT Image FROM MEntities WHERE MID = ?";
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
@@ -25,16 +29,7 @@ public class ImageServlet extends HttpServlet {
             return;
         }
 
-        int mid;
-        try {
-            mid = Integer.parseInt(midParam);
-        } catch (NumberFormatException e) {
-            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            return;
-        }
-
-        // 默认按 JPEG 处理，如果你存的是 PNG，可以改成 image/png 或根据内容判断
-        resp.setContentType("image/jpeg");
+        int mid = Integer.parseInt(midParam);
 
         try (Connection conn = DbUtil.getConnection();
              PreparedStatement ps = conn.prepareStatement(SQL)) {
@@ -47,25 +42,38 @@ public class ImageServlet extends HttpServlet {
                     return;
                 }
 
-                Blob blob = rs.getBlob(1);
-                if (blob == null) {
+                // Required for modern Oracle drivers: retrieve ORDImage via STRUCT
+                STRUCT struct = (STRUCT) rs.getObject(1);
+                if (struct == null) {
                     resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
                     return;
                 }
 
-                try (InputStream in = blob.getBinaryStream();
-                     OutputStream out = resp.getOutputStream()) {
+                OrdImage ordImg =
+                        (OrdImage) OrdImage.getORADataFactory()
+                                .create(struct, OracleTypes.OTHER);
 
-                    byte[] buffer = new byte[8192];
-                    int len;
-                    while ((len = in.read(buffer)) != -1) {
-                        out.write(buffer, 0, len);
-                    }
-                    out.flush();
+                if (ordImg == null || ordImg.getDataInByteArray() == null) {
+                    resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                    return;
                 }
+
+                // Set correct MIME type (PNG / JPEG / etc.)
+                String mime = ordImg.getMimeType();
+                if (mime == null || mime.isEmpty()) {
+                    mime = "application/octet-stream";
+                }
+                resp.setContentType(mime);
+
+                byte[] data = ordImg.getDataInByteArray();
+                resp.setContentLength(data.length);
+
+                OutputStream out = resp.getOutputStream();
+                out.write(data);
+                out.flush();
             }
 
-        } catch (SQLException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }

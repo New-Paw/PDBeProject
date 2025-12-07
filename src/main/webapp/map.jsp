@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Web Map (Gray Background)</title>
+  <title>Web Map</title>
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 
@@ -14,16 +14,15 @@
       font-family: Arial, sans-serif;
     }
 
-    /* 整体左右布局容器 */
     #container {
       display: flex;
       flex-direction: row;
-      height: 100vh; /* 占满窗口高度 */
+      height: 100vh;
     }
 
-    /* 左侧：工具栏 + 地图 */
+    /* Left pane: map */
     #left-pane {
-      flex: 2;              /* 左侧占2份宽度 */
+      flex: 2;
       display: flex;
       flex-direction: column;
       border-right: 1px solid #ccc;
@@ -36,14 +35,14 @@
     }
 
     #map {
-      flex: 1;              /* 地图占满左侧剩余空间 */
+      flex: 1;
       border: 1px solid #ccc;
       background-color: #e6e6e6;
     }
 
-    /* 右侧：缩略图面板 */
+    /* Right pane: upload + edit + filter + thumbnails */
     #right-pane {
-      flex: 1;              /* 右侧占1份宽度 */
+      flex: 1;
       display: flex;
       flex-direction: column;
       padding: 10px;
@@ -51,18 +50,15 @@
 
     #right-title {
       font-weight: bold;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       border-bottom: 1px solid #ccc;
-      padding-bottom: 5px;
+      padding-bottom: 4px;
     }
 
-    #image-panel {
-      flex: 1;
-      overflow-y: auto;
-    }
-
-    #upload-panel {
-      margin: 10px 0;
+    #upload-panel,
+    #edit-panel,
+    #filter-panel {
+      margin-bottom: 10px;
       padding: 8px;
       border: 1px solid #ddd;
       border-radius: 4px;
@@ -79,24 +75,37 @@
       width: 80px;
     }
 
+    #edit-panel {
+      display: none;
+    }
+
+    #image-panel {
+      flex: 1;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 6px;
+      background-color: #fff;
+    }
 
     .thumb-item {
       display: flex;
       flex-direction: column;
       align-items: center;
-      margin-bottom: 10px;
-      border: 1px solid #ddd;
-      padding: 5px;
+      margin-bottom: 8px;
+      border: 1px solid #eee;
+      padding: 4px;
       border-radius: 4px;
       background-color: #fafafa;
+      cursor: pointer;
     }
 
     .thumb-item img {
       max-width: 100%;
       max-height: 120px;
+      object-fit: contain;
       display: block;
       margin-bottom: 4px;
-      object-fit: contain;
     }
 
     .thumb-title {
@@ -110,67 +119,109 @@
 <body>
 
 <div id="container">
-  <!-- 左侧：地图 -->
   <div id="left-pane">
-    <div id="toolbar">
-      <input type="text" id="search" placeholder="Search place...">
-      <button onclick="doSearch()">Search</button>
-    </div>
     <div id="map"></div>
   </div>
 
   <div id="right-pane">
-    <div id="right-title">请选择左侧地图上的地点</div>
+    <div id="right-title">click a marker</div>
 
-    <!-- 🔽 新增：上传区域 -->
+    <!-- Upload panel -->
     <div id="upload-panel">
       <form id="upload-form"
             method="post"
             action="<%= request.getContextPath() %>/uploadImage"
             enctype="multipart/form-data">
 
-        <!-- 当前选中的 SID，会在 JS 里动态写入 -->
         <input type="hidden" name="sid" id="upload-sid">
 
         <div class="upload-row">
-          <label for="upload-title">图片标题：</label>
-          <input type="text" name="title" id="upload-title" placeholder="输入图片标题">
+          <label for="upload-title">Title</label>
+          <input type="text" name="title" id="upload-title" placeholder="input title">
         </div>
 
         <div class="upload-row">
-          <label for="upload-file">选择图片：</label>
+          <label for="upload-time">Date</label>
+          <input type="date" name="tokentime" id="upload-time">
+        </div>
+
+        <div class="upload-row">
+          <label for="upload-file">Select file:</label>
           <input type="file" name="image" id="upload-file" accept="image/*">
         </div>
 
         <div class="upload-row">
-          <button type="submit">上传图片</button>
+          <button type="submit">upload</button>
         </div>
       </form>
     </div>
-    <!-- 🔼 新增结束 -->
+
+    <!-- Edit selected image -->
+    <div id="edit-panel">
+      <input type="hidden" id="edit-mid">
+
+      <div class="upload-row">
+        <label>Selected:</label>
+        <span id="edit-img-title"></span>
+      </div>
+
+      <div class="upload-row">
+        <label for="edit-title">New title:</label>
+        <input type="text" id="edit-title" placeholder="edit title">
+      </div>
+
+      <div class="upload-row">
+        <button type="button" onclick="saveTitle()">Save Title</button>
+        <button type="button" onclick="deleteImage()">Delete</button>
+        <!-- Similar image search trigger -->
+        <button type="button" onclick="findSimilar()">Find Similar</button>
+      </div>
+    </div>
+
+    <!-- Time range filter -->
+    <div id="filter-panel">
+      <div class="upload-row">
+        <label for="filter-start">From</label>
+        <input type="date" id="filter-start">
+      </div>
+      <div class="upload-row">
+        <label for="filter-end">To</label>
+        <input type="date" id="filter-end">
+      </div>
+      <div class="upload-row">
+        <button type="button" onclick="applyFilter()">Filter</button>
+        <button type="button" onclick="clearFilter()">Clear</button>
+      </div>
+    </div>
 
     <div id="image-panel">
-      暂无选中地点。
+      none marker selected
     </div>
   </div>
-
+</div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 <script>
-  // 使用简单坐标系：本地 0~500
+  // Leaflet map using simple CRS (0–500 local coordinates)
   var map = L.map('map', {
     crs: L.CRS.Simple
   });
 
-  // 初始视图范围（根据你数据修改）
   map.fitBounds([[0, 0], [500, 500]]);
 
-  // 方便 JS 里拼 URL
   const baseUrl = '<%= request.getContextPath() %>';
 
-  loadEntities();
+  // currentSid == null -> show all images
+  let currentSid = null;
+  let currentEntityName = '';
+  let selectedImageMid = null;
 
+  // Initial load (map + all images)
+  loadEntities();
+  loadImagesForCurrent();
+
+  // Load spatial entities and draw markers/geometries
   function loadEntities() {
     fetch(baseUrl + '/api/Sentities')
             .then(resp => resp.json())
@@ -178,7 +229,7 @@
               if (!data || data.length === 0) return;
 
               data.forEach(function (e) {
-                // 1. 中心点 marker
+                // Center marker
                 if (typeof e.lat === "number" && typeof e.lon === "number") {
                   const lat = e.lat;
                   const lon = e.lon;
@@ -187,17 +238,16 @@
                   const marker = L.marker([lat, lon]).addTo(map)
                           .bindPopup(
                                   name + "<br/>(" +
-                                  lat.toFixed(2) + ", " +    // 两位小数
+                                  lat.toFixed(2) + ", " +
                                   lon.toFixed(2) + ")"
                           );
 
-                  // 点击 marker 时，右侧联动：加载图片
                   marker.on('click', function () {
                     onMarkerClick(e);
                   });
                 }
 
-                // 2. 如果有 WKT，画出该记录自己的几何边框
+                // Optional geometry overlay (polyline/polygon/point)
                 if (e.wkt) {
                   const geom = parseWKT(e.wkt);
                   if (!geom || !geom.coords || geom.coords.length === 0) {
@@ -209,8 +259,7 @@
                   } else if (geom.type === 'polygon') {
                     L.polygon(geom.coords).addTo(map);
                   } else if (geom.type === 'point') {
-                    // 若几何本身是点，看需求是否额外画
-                    // L.marker(geom.coords[0]).addTo(map);
+                    L.marker(geom.coords[0]).addTo(map);
                   }
                 }
               });
@@ -220,83 +269,227 @@
             });
   }
 
-  /**
-   * marker 点击后的联动逻辑：
-   *  1. 更新右侧标题
-   *  2. 去后端按 SID 查询缩略图（/api/Simages?sid=...）
-   *  3. 把返回的图片列表渲染到右侧 image-panel
-   */
+  // Marker click handler: restrict images to given SID
   function onMarkerClick(entity) {
     const sid = entity.sid;
     const name = entity.name || ('SID ' + sid);
 
-    // 1) 更新右侧标题
-    const titleDiv = document.getElementById('right-title');
-    titleDiv.textContent = '选中地点：' + name + ' (SID=' + sid + ')';
+    currentSid = sid;
+    currentEntityName = name;
 
-  // 2) 设置上传表单的 SID（隐藏字段）
-  const sidInput = document.getElementById('upload-sid');
-  sidInput.value = sid;
+    selectedImageMid = null;
+    document.getElementById('edit-panel').style.display = 'none';
 
-  // 可以顺便预填一下标题，例如：
-  const titleInput = document.getElementById('upload-title');
-  if (!titleInput.value) {
-    titleInput.value = name + ' 的新图片';
+    document.getElementById('filter-start').value = '';
+    document.getElementById('filter-end').value = '';
+
+    const sidInput = document.getElementById('upload-sid');
+    sidInput.value = sid;
+
+    loadImagesForCurrent();
   }
 
-  // 3) 清空图片面板，先显示“加载中…”
-  const panel = document.getElementById('image-panel');
-  panel.innerHTML = '正在加载图片...';
+  /**
+   * Load image list according to currentSid and optional date filter.
+   *   currentSid == null -> /api/Simages (all images)
+   *   currentSid != null -> /api/Simages?sid=...
+   */
+  function loadImagesForCurrent() {
+    const panel = document.getElementById('image-panel');
+    const titleDiv = document.getElementById('right-title');
 
-    // 3) 调用后端接口，根据 SID 查图片
-    fetch(baseUrl + '/api/Simages?sid=' + encodeURIComponent(sid))
+    if (currentSid == null) {
+      titleDiv.textContent = 'All images';
+      document.getElementById('upload-sid').value = '';
+    } else {
+      titleDiv.textContent = 'Selected: ' + currentEntityName + ' (SID=' + currentSid + ')';
+    }
+
+    panel.innerHTML = 'loading...';
+
+    const start = document.getElementById('filter-start')
+            ? document.getElementById('filter-start').value
+            : '';
+    const end = document.getElementById('filter-end')
+            ? document.getElementById('filter-end').value
+            : '';
+
+    let url = baseUrl + '/api/Simages';
+    const params = [];
+
+    if (currentSid != null) {
+      params.push('sid=' + encodeURIComponent(currentSid));
+    }
+    if (start) {
+      params.push('from=' + encodeURIComponent(start));
+    }
+    if (end) {
+      params.push('to=' + encodeURIComponent(end));
+    }
+
+    if (params.length > 0) {
+      url += '?' + params.join('&');
+    }
+
+    fetch(url)
             .then(resp => resp.json())
             .then(images => {
-              panel.innerHTML = '';
+              renderImages(images);
+            })
+            .catch(err => {
+              console.error('load images error:', err);
+              panel.textContent = 'error...';
+            });
+  }
 
-              if (!images || images.length === 0) {
-                panel.textContent = '没有找到相关图片。';
-                return;
-              }
+  // Render image thumbnails into the right-hand panel
+  function renderImages(images) {
+    const panel = document.getElementById('image-panel');
+    panel.innerHTML = '';
 
-      images.forEach(function (img) {
-        // img 结构：{ id: MID, title: Title }
+    if (!images || images.length === 0) {
+      panel.textContent = 'No images found';
+      return;
+    }
 
-        const div = document.createElement('div');
-        div.className = 'thumb-item';
+    images.forEach(function (img) {
+      // img: { id: MID, title: Title, tokentime?: 'yyyy-MM-dd' }
+      const div = document.createElement('div');
+      div.className = 'thumb-item';
 
-        const imageElem = document.createElement('img');
-        // 显示实际图像：由 /image?mid=... 输出 ORDSYS.ORDImage 的二进制
-        imageElem.src = baseUrl + '/image?mid=' + img.id;
-        imageElem.alt = img.title || '';
+      const imageElem = document.createElement('img');
+      imageElem.src = baseUrl + '/image?mid=' + img.id;
+      imageElem.alt = img.title || '';
 
-                const caption = document.createElement('div');
-                caption.className = 'thumb-title';
-                caption.textContent = img.title || ('Image ' + img.id);
+      const caption = document.createElement('div');
+      caption.className = 'thumb-title';
 
-                div.appendChild(imageElem);
-                div.appendChild(caption);
+      let text = img.title || ('Image ' + img.id);
+      if (img.tokentime) {
+        text += ' (' + img.tokentime + ')';
+      }
+      caption.textContent = text;
 
-        panel.appendChild(div);
+      div.appendChild(imageElem);
+      div.appendChild(caption);
+
+      div.addEventListener('click', function () {
+        onThumbClick(img);
       });
-    })
-    .catch(err => {
-      console.error('load images error:', err);
-      panel.textContent = '加载图片时出错。';
+
+      panel.appendChild(div);
     });
-}
+  }
+
+  // Trigger similar-image search based on selectedImageMid
+  function findSimilar() {
+    if (!selectedImageMid) {
+      alert("No image selected.");
+      return;
+    }
+
+    const panel = document.getElementById('image-panel');
+    panel.innerHTML = 'searching similar images...';
+
+    const url = baseUrl + '/api/similar?mid=' + encodeURIComponent(selectedImageMid);
+
+    fetch(url)
+            .then(resp => resp.json())
+            .then(images => {
+              // Similar servlet returns an array (even if it contains only one image)
+              renderImages(images);
+            })
+            .catch(err => {
+              console.error('find similar error:', err);
+              panel.textContent = 'Error when searching similar images.';
+            });
+  }
+
+  // Thumbnail click -> show edit panel for this MID
+  function onThumbClick(img) {
+    selectedImageMid = img.id;
+
+    const editPanel = document.getElementById('edit-panel');
+    editPanel.style.display = 'block';
+
+    const label = document.getElementById('edit-img-title');
+    label.textContent = img.title || ('Image ' + img.id);
+
+    const titleInput = document.getElementById('edit-title');
+    titleInput.value = img.title || '';
+  }
+
+  // Update image title via /updateImageTitle
+  function saveTitle() {
+    if (!selectedImageMid) {
+      alert("No image selected.");
+      return;
+    }
+    const newTitle = document.getElementById('edit-title').value || '';
+
+    fetch(baseUrl + '/updateImageTitle', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+      },
+      body: 'mid=' + encodeURIComponent(selectedImageMid) +
+              '&title=' + encodeURIComponent(newTitle)
+    })
+            .then(resp => {
+              if (!resp.ok) throw new Error('HTTP ' + resp.status);
+              loadImagesForCurrent();
+            })
+            .catch(err => {
+              console.error('update title error:', err);
+              alert('Update failed');
+            });
+  }
+
+  // Delete image via /deleteImage
+  function deleteImage() {
+    if (!selectedImageMid) {
+      alert("No image selected.");
+      return;
+    }
+    if (!confirm('Are you sure you want to delete this image?')) return;
+
+    fetch(baseUrl + '/deleteImage', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+      },
+      body: 'mid=' + encodeURIComponent(selectedImageMid)
+    })
+            .then(resp => {
+              if (!resp.ok) throw new Error('HTTP ' + resp.status);
+              selectedImageMid = null;
+              document.getElementById('edit-panel').style.display = 'none';
+              loadImagesForCurrent();
+            })
+            .catch(err => {
+              console.error('delete image error:', err);
+              alert('Delete failed');
+            });
+  }
+
+  // Apply time range filter
+  function applyFilter() {
+    loadImagesForCurrent();
+  }
+
+  // Clear time range filter
+  function clearFilter() {
+    document.getElementById('filter-start').value = '';
+    document.getElementById('filter-end').value = '';
+    loadImagesForCurrent();
+  }
 
   /**
-   * 通用 WKT 解析：
-   * 支持：
+   * Parse simple WKT geometries:
    *   POINT (x y)
    *   LINESTRING (x1 y1, x2 y2, ...)
    *   POLYGON ((x1 y1, x2 y2, ...))
-   * 返回：
-   *   { type: 'point' | 'linestring' | 'polygon',
-   *     coords: [[lat, lon], ...] }
-   * 注意：Oracle WKT 是 (X Y) = (lon, lat)，Leaflet 要 [lat, lon]，
-   *       所以这里做了 (y, x) 对调。
+   * Oracle WKT: (X Y) = (lon, lat), Leaflet: [lat, lon]
    */
   function parseWKT(wkt) {
     if (!wkt) return null;
@@ -323,7 +516,7 @@
         var nums = p.trim().split(/\s+/);
         var x = parseFloat(nums[0]);
         var y = parseFloat(nums[1]);
-        return [y, x];  // Leaflet: [lat, lon]
+        return [y, x];
       });
       return {
         type: 'linestring',
@@ -331,7 +524,7 @@
       };
     }
 
-    // POLYGON（只取外环）
+    // POLYGON
     var mPoly = wkt.match(/^POLYGON\s*\(\(\s*(.+?)\s*\)\)$/i);
     if (mPoly) {
       var coordPart2 = mPoly[1].trim();
